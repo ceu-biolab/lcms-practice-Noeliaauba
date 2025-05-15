@@ -1,5 +1,8 @@
 package lipid;
 
+import adduct.Adduct;
+import adduct.AdductList;
+
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -14,7 +17,7 @@ public class Annotation {
     private final double mz;
     private final double intensity; // intensity of the most abundant peak in the groupedPeaks
     private final double rtMin;
-    private final IoniationMode ionizationMode;
+    private final IonizationMode ionizationMode;
     private String adduct; // !!TODO The adduct will be detected based on the groupedSignals
     private final Set<Peak> groupedSignals;
     private int score;
@@ -28,7 +31,7 @@ public class Annotation {
      * @param retentionTime
      * @param ionizationMode
      */
-    public Annotation(Lipid lipid, double mz, double intensity, double retentionTime, IoniationMode ionizationMode) {
+    public Annotation(Lipid lipid, double mz, double intensity, double retentionTime, IonizationMode ionizationMode) {
         this(lipid, mz, intensity, retentionTime, ionizationMode, Collections.emptySet());
     }
 
@@ -40,7 +43,7 @@ public class Annotation {
      * @param ionizationMode
      * @param groupedSignals
      */
-    public Annotation(Lipid lipid, double mz, double intensity, double retentionTime, IoniationMode ionizationMode, Set<Peak> groupedSignals) {
+    public Annotation(Lipid lipid, double mz, double intensity, double retentionTime, IonizationMode ionizationMode, Set<Peak> groupedSignals) {
         this.lipid = lipid;
         this.mz = mz;
         this.rtMin = retentionTime;
@@ -50,6 +53,7 @@ public class Annotation {
         this.groupedSignals = new TreeSet<>(groupedSignals);
         this.score = 0;
         this.totalScoresApplied = 0;
+        adductDetection();
     }
 
     public Lipid getLipid() {
@@ -76,7 +80,7 @@ public class Annotation {
         return intensity;
     }
 
-    public IoniationMode getIonizationMode() {
+    public IonizationMode getIonizationMode() {
         return ionizationMode;
     }
 
@@ -106,6 +110,70 @@ public class Annotation {
     public double getNormalizedScore() {
         return (double) this.score / this.totalScoresApplied;
     }
+
+
+
+    public void adductDetection () {
+        double error;
+        String finalAdduct;
+        final double tolerance= 10;
+        if (ionizationMode == IonizationMode.POSITIVE) {
+            for (String BaseAdduct : AdductList.MAPMZPOSITIVEADDUCTS.keySet()) {
+                for (String CandidateAdduct : AdductList.MAPMZPOSITIVEADDUCTS.keySet()) {
+                    if (BaseAdduct.equals(CandidateAdduct)) continue;
+
+                    for (Peak BasePeak : groupedSignals) {
+                        for (Peak CandidatePeak : groupedSignals) {
+                            if (BasePeak.equals(CandidatePeak)) continue;
+
+                            Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeak.getMz(), BaseAdduct);
+                            Double MonoMassCandidatePeak = Adduct.getMonoisotopicMassFromMZ(CandidatePeak.getMz(), CandidateAdduct);
+                            if (MonoMassBasePeak != null && MonoMassCandidatePeak != null) {
+                                error = Adduct.calculatePPMIncrement(MonoMassBasePeak, MonoMassCandidatePeak);
+                                System.out.printf(String.valueOf(error),"Reference mass: %s\n",MonoMassBasePeak, "Candidate mass",MonoMassCandidatePeak);
+                                if (error <= tolerance) {
+                                    this.adduct = BaseAdduct;
+                                    return;
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (ionizationMode == IonizationMode.NEGATIVE) {
+            for (String BaseAdduct : AdductList.MAPMZNEGATIVEADDUCTS.keySet()) {
+                for (String CandidateAdduct : AdductList.MAPMZNEGATIVEADDUCTS.keySet()) {
+                    if (BaseAdduct.equals(CandidateAdduct)) continue;
+
+                    for (Peak BasePeak : groupedSignals) {
+                        for (Peak CandidatePeak : groupedSignals) {
+                            if (BasePeak.equals(CandidatePeak)) continue;
+
+                            Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeak.getMz(), BaseAdduct);
+                            Double MonoMassCandidatePeak = Adduct.getMonoisotopicMassFromMZ(CandidatePeak.getMz(), CandidateAdduct);
+                            if (MonoMassBasePeak != null && MonoMassCandidatePeak != null) {
+                                error = Adduct.calculatePPMIncrement(MonoMassBasePeak, MonoMassCandidatePeak);
+                                System.out.printf(String.valueOf(error),"Reference mass: %s\n",MonoMassBasePeak, "Candidate mass",MonoMassCandidatePeak);
+
+                                if (error <= tolerance) {
+                                    this.adduct = BaseAdduct;
+                                    return;
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+
+    }
+
+
 
     @Override
     public boolean equals(Object o) {
