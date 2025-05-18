@@ -1,7 +1,7 @@
 package lipid;
 
-import adduct.Adduct;
-import adduct.AdductList;
+
+import adduct.*;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -115,28 +115,25 @@ public class Annotation {
 
     public void adductDetection () {
         double error;
-        String finalAdduct;
+        double BasePeakMz=this.getMz();
         final double tolerance= 10;
         if (ionizationMode == IonizationMode.POSITIVE) {
             for (String BaseAdduct : AdductList.MAPMZPOSITIVEADDUCTS.keySet()) {
                 for (String CandidateAdduct : AdductList.MAPMZPOSITIVEADDUCTS.keySet()) {
                     if (BaseAdduct.equals(CandidateAdduct)) continue;
+                    for (Peak CandidatePeak : groupedSignals) {
+                        if (Double.valueOf(CandidatePeak.getMz()).equals(BasePeakMz)) continue;
+                        Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeakMz, BaseAdduct);
+                        Double MonoMassCandidatePeak = Adduct.getMonoisotopicMassFromMZ(CandidatePeak.getMz(), CandidateAdduct);
+                        if (MonoMassBasePeak != null && MonoMassCandidatePeak != null) {
+                            error = Adduct.calculatePPMIncrement(MonoMassBasePeak, MonoMassCandidatePeak);
+                            System.out.println(error + ", " +BaseAdduct+ " = " + MonoMassBasePeak +  ", mz1 = " + BasePeakMz +",   "+ CandidateAdduct+ " = " + MonoMassCandidatePeak+ ", mz2 = " + CandidatePeak.getMz());
 
-                    for (Peak BasePeak : groupedSignals) {
-                        for (Peak CandidatePeak : groupedSignals) {
-                            if (BasePeak.equals(CandidatePeak)) continue;
-
-                            Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeak.getMz(), BaseAdduct);
-                            Double MonoMassCandidatePeak = Adduct.getMonoisotopicMassFromMZ(CandidatePeak.getMz(), CandidateAdduct);
-                            if (MonoMassBasePeak != null && MonoMassCandidatePeak != null) {
-                                error = Adduct.calculatePPMIncrement(MonoMassBasePeak, MonoMassCandidatePeak);
-                                System.out.printf(String.valueOf(error),"Reference mass: %s\n",MonoMassBasePeak, "Candidate mass",MonoMassCandidatePeak);
-                                if (error <= tolerance) {
-                                    this.adduct = BaseAdduct;
-                                    return;
-                                }
-
+                            if (error <= tolerance) {
+                                this.adduct = BaseAdduct;
+                                return;
                             }
+
                         }
                     }
                 }
@@ -147,16 +144,13 @@ public class Annotation {
             for (String BaseAdduct : AdductList.MAPMZNEGATIVEADDUCTS.keySet()) {
                 for (String CandidateAdduct : AdductList.MAPMZNEGATIVEADDUCTS.keySet()) {
                     if (BaseAdduct.equals(CandidateAdduct)) continue;
-
-                    for (Peak BasePeak : groupedSignals) {
                         for (Peak CandidatePeak : groupedSignals) {
-                            if (BasePeak.equals(CandidatePeak)) continue;
-
-                            Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeak.getMz(), BaseAdduct);
+                            if (Double.valueOf(CandidatePeak.getMz()).equals(BasePeakMz)) continue;
+                            Double MonoMassBasePeak = Adduct.getMonoisotopicMassFromMZ(BasePeakMz, BaseAdduct);
                             Double MonoMassCandidatePeak = Adduct.getMonoisotopicMassFromMZ(CandidatePeak.getMz(), CandidateAdduct);
                             if (MonoMassBasePeak != null && MonoMassCandidatePeak != null) {
                                 error = Adduct.calculatePPMIncrement(MonoMassBasePeak, MonoMassCandidatePeak);
-                                System.out.printf(String.valueOf(error),"Reference mass: %s\n",MonoMassBasePeak, "Candidate mass",MonoMassCandidatePeak);
+                                System.out.println(error + ", " +BaseAdduct+ " = " + MonoMassBasePeak +  ", mz1 = " + BasePeakMz +",   "+ CandidateAdduct+ " = " + MonoMassCandidatePeak+ ", mz2 = " + CandidatePeak.getMz());
 
                                 if (error <= tolerance) {
                                     this.adduct = BaseAdduct;
@@ -167,7 +161,7 @@ public class Annotation {
                         }
                     }
                 }
-            }
+
         }
 
 

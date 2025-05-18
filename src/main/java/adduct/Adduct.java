@@ -10,6 +10,7 @@ public class Adduct {
      *
      * @return the monoisotopic mass of the experimental mass mz with the adduct @param adduct
      */
+
     public static Double getMonoisotopicMassFromMZ(Double mz, String adduct) {
         Double massToSearch;
        /*
@@ -49,14 +50,6 @@ public class Adduct {
         return monoisotopicMass;
     }
 
-    /**
-     * Calculate the mz of a monoisotopic mass with the corresponding adduct
-     *
-     * @param monoisotopicMass
-     * @param adduct adduct name ([M+H]+, [2M+H]+, [M+2H]2+, etc..)
-     *
-     * @return
-     */
     public static Double getMZFromMonoisotopicMass(Double monoisotopicMass, String adduct) {
         Double massToSearch;
         // !! TODO METHOD

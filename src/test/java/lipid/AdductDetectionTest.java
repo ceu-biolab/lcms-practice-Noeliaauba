@@ -60,7 +60,7 @@ public class AdductDetectionTest {
         Peak singlyCharged = new Peak(700.500, 100000.0);  // [M+H]+
         Peak doublyCharged = new Peak(350.754, 85000.0);   // [M+2H]2+
         Lipid lipid = new Lipid(3, "TG 54:3", "C57H104O6", LipidType.TG, 54, 3);
-        Annotation annotation = new Annotation(lipid, singlyCharged.getMz(), singlyCharged.getIntensity(), 10d, IonizationMode.POSITIVE, Set.of(singlyCharged, doublyCharged));
+        Annotation annotation = new Annotation(lipid, singlyCharged.getMz(), singlyCharged.getIntensity(), 10d, IonizationMode.POSITIVE, Set.of(singlyCharged,doublyCharged));
 
         assertNotNull("[M+H]+ should be detected", annotation.getAdduct());
         assertEquals( "Adduct inferred from lowest mz in group","[M+H]+", annotation.getAdduct());
@@ -83,6 +83,22 @@ public class AdductDetectionTest {
         assertNotNull("[M-H]− should be detected", annotation.getAdduct());
         assertEquals("Adduct inferred from lowest mz in group", "[M-H]−", annotation.getAdduct());
     }
+
+    @Test
+    public void shouldDetectDimerizationAndBaseMonomer() {
+        double base_M = 699.492724;
+        Peak monomer = new Peak(base_M + 1.007276, 100000.0);
+        // Dímero [2M+H]+ 1400.993 (2*699.492724)-(-1.007276)=1399.993
+        Peak dimer = new Peak((base_M*2) + 1.007276, 50000.0);
+
+        Lipid lipid = new Lipid(5, "PC 34:2", "C42H80NO8P", LipidType.TG, 34, 2);
+
+        Annotation annotation = new Annotation(lipid, monomer.getMz(), monomer.getIntensity(), 7d, IonizationMode.POSITIVE, Set.of(monomer, dimer));
+
+        // Verificamos que se detecta correctamente como [M+H]+ (el más pequeño)
+        assertNotNull("Debe detectar el aducto principal", annotation.getAdduct());
+        assertEquals("Debe ser [M+H]+ como base", "[M+H]+", annotation.getAdduct());
+}
 
 
 
